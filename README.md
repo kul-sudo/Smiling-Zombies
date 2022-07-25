@@ -1,3 +1,5 @@
+![logo](https://user-images.githubusercontent.com/95244851/180792925-826c84d4-f399-4141-b3b3-2e687601827c.png)
+
 # What is Smiling Zombies?
 Smiling Zombies is a vigorous clash of zombies and smilies.
 
