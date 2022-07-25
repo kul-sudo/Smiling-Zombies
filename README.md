@@ -18,11 +18,7 @@ They incessantly consume plants, consume each other, procreate and evolve. Remem
 The smilies have the following properties:
 * Speed
 * Vision distance: how far the smiley can see
-* Energy: eating plants/smilies augments the energy;
-<br>
-higher vision distance/speed => higher energy consumption; 
-<br>
-zero energy means the cessation of smiley's life
+* Energy: eating plants/smilies augments the energy;<br>higher vision distance/speed => higher energy consumption;<br>zero energy means the cessation of smiley's life
 * Procreation threshold: how much energy is required for the smiley to procreate
 * Food preference: whether the smiley prefers to eat plants or other smilies
 
