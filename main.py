@@ -1,4 +1,4 @@
-from tkinter import FLAT, LEFT, RIGHT, TOP, Canvas, Frame, PhotoImage, StringVar, Label, LabelFrame, Scale, Toplevel
+from tkinter import FLAT, LEFT, RIGHT, TOP, Canvas, Frame, PhotoImage, StringVar, Label, LabelFrame, Scale
 from tkinter.ttk import OptionMenu, Button
 from tkinter.font import Font
 
@@ -6,41 +6,44 @@ from config import *
 from images import LOGO
 from help_maintenance import show_help
 from evolution import evolution
-from bodies_functions import calculate_data_for_body, create_new_boss
-from tips import prepare_tips
-from zombies import calculate_data_for_zombie_boss
-from global_items import start_pause_request, switch_scales, mouse_wheel, delete_help, window_commands, window, evolution_field, evolution_status
-from draw_erase import display_stimulus, init_stimulus_time
+from smileys_functions import calculate_data_for_smilies
+from zombie_boss import recreating_zombie_boss, calculate_data_for_zombie_boss
+from tips import tips_for_evolution, stop_tips_timer
+from global_items import smilies_data, scales, delete_help_window, window_commands, window, evolution_field, evolution_status
+from draw_non_creatures import display_stimulus, init_stimulus_time
+from special_window_functions import cancel_blink, mouse_wheel, switch_scales, start_pause_request
 import global_items
 
 def window_handling(): # Creating and handling the window
-    # Creating the window
+
+    '''Creating the window'''
     window.title(TITLE)
     window.iconphoto(True, PhotoImage(data=LOGO))
     window.attributes('-fullscreen', True)
-    window.bind('<Button-1>', delete_help)
-    window.bind('<Button-2>', delete_help)
 
-    # add='+' means that another bind is tacked
+    # Tacking functions to buttons
+    window.bind('<Button-1>', delete_help_window)
+    window.bind('<Button-2>', delete_help_window)
+    window.bind('<Button-3>', delete_help_window)
+
     window.bind('<Button-2>', switch_scales, add='+')
-
-    window.bind('<Button-3>', delete_help)
     window.bind('<MouseWheel>', mouse_wheel)
 
+    # Fetching the size of the window
     window.update()
     window_width = window.winfo_width()
     window_height = window.winfo_height()
 
-    # Creating top_frame
+    # Creating the top frame in which the evolution field and the zombie boss control panel are located
     (top_frame := Frame()).pack()
-     
-    # Creating canvas
 
+    # Creating the canvas for the evolution field
+    BOTTOM_CONTROLS_AREA_SIZE = 68
+    RIGHT_CONTROLS_AREA_SIZE = 105
+    INDENTATION = 10
     evolution_field['width'] = window_width-RIGHT_CONTROLS_AREA_SIZE-INDENTATION*2
     evolution_field['height'] = window_height-BOTTOM_CONTROLS_AREA_SIZE
-
-    calculate_data_for_body()
-    calculate_data_for_zombie_boss()
+    evolution_field['diagonal'] = (evolution_field['width']**2+evolution_field['height']**2)**.5
 
     global_items.canvas = Canvas(
         master=top_frame,
@@ -49,75 +52,75 @@ def window_handling(): # Creating and handling the window
         bd=0, # Canvas outline width
         relief=FLAT # Appearence of the outline of canvas
     )
-
     global_items.canvas.pack(side=LEFT, padx=INDENTATION, pady=INDENTATION)
-    global_items.canvas.bind('<Button-3>', start_pause_request)
 
+    # Tacking functions to buttons
+    global_items.canvas.bind('<Button-3>', start_pause_request)
     global_items.canvas_after_id = global_items.canvas.after(0, display_stimulus)
 
-    # Creating a frame for controlling the behaviour of the body
+    # Calculating data for the smilies and the zombie boss
+    calculate_data_for_smilies()
+    calculate_data_for_zombie_boss()
+
+    # Creating a frame for controlling the behaviour of the zombie boss
     global_items.user_control_frame = Frame(master=top_frame)
     global_items.user_control_frame.pack(side=TOP)
 
     # Creating a label which displays the energy of the zombie boss
-    global_items.health_to_display = StringVar()
-    global_items.health_to_display.set('Health:\n--')
+    global_items.boss_health = StringVar()
+    global_items.boss_health.set('Health:\n--')
     Label(
         master=global_items.user_control_frame,
-        textvariable=global_items.health_to_display,
+        textvariable=global_items.boss_health,
         font=Font(size=20, font='Courier')
     ).pack(side=TOP, pady=10)
 
     # Creating a scale for controlling the speed
     Label(
         master=global_items.user_control_frame,
-        text=SPEED_LABEL,
+        text='Speed',
         font=Font(size=20, font='Courier')
     ).pack(side=TOP, pady=5)
 
     def change_zombie_boss_speed(value: str):
-        '''Changing the speed of the circle-shaped zombie boss to the value of the corresponding scale.'''
-        evolution_status.zombie_boss.speed = int(value)/RATIO
+        evolution_status.zombie_boss.speed = int(value)/SPEED_RATIO
 
-    global_items.user_selected_body_speed = Scale(
+    scales['speed'] = Scale(
         master=global_items.user_control_frame,
-        from_=round(global_items.average_body_speed*RATIO*3),
-        to=round(global_items.average_body_speed*RATIO*0.1) ,
+        from_=round(smilies_data['average_speed']*SPEED_RATIO*3),
+        to=round(smilies_data['average_speed']*SPEED_RATIO*0.1) ,
         length=200,
         sliderlength=0,
         showvalue=False,
         command=change_zombie_boss_speed
     )
-    global_items.user_selected_body_speed.pack(side=TOP)
-
-    # Goofy fix
-    Label(master=global_items.user_control_frame, text=' ').pack()
+    scales['speed'].pack(side=TOP)
 
     # Creating a scale for controlling the vision distance
     Label(
         master=global_items.user_control_frame,
-        text=VISION_DISTANCE_LABEL,
+        text='\nVision\ndistance',
         font=Font(size=20, font='Courier')
     ).pack(side=TOP, pady=5)
 
     def change_zombie_boss_vision_distance(value: str):
-        '''Changing the vision distance of the circle-shaped zombie boss to the value of the corresponding scale.'''
         evolution_status.zombie_boss.vision_distance = int(value)
         
-    global_items.user_selected_vision_distance = Scale(
+    scales['vision distance'] = Scale(
         master=global_items.user_control_frame,
-        from_=round(global_items.average_body_vision_distance*5),
-        to=BODY_SIZE,
+        from_=round(smilies_data['average_vision_distance']*5),
+        to=SMILEY_SIZE,
         length=200,
         sliderlength=0,
         showvalue=False,
         command=change_zombie_boss_vision_distance
     )
-    global_items.user_selected_vision_distance.pack(side=TOP)
+    scales['vision distance'].pack(side=TOP)
 
     # Creating a label for tips
     global_items.tip_text = StringVar()
-    Label(textvariable=global_items.tip_text).pack(side=LEFT, padx=5)
+    global_items.tips_label = Label(textvariable=global_items.tip_text)
+    global_items.tips_label.pack(side=LEFT, padx=5)
 
     # Creating a LabelFrame with a title describing what the menu can be used for
     (menu_frame := LabelFrame(
@@ -126,7 +129,7 @@ def window_handling(): # Creating and handling the window
         labelanchor='n'
     )).pack(side=RIGHT, padx=5)
 
-    # Creating a OptionMenu for selecting which properties have to be shown over the bodies
+    # Creating an OptionMenu for selecting which properties have to be shown over the smileys
     def handle_selection(choice: str):
         window_commands['to-show-selected-property'] = choice
 
@@ -139,7 +142,7 @@ def window_handling(): # Creating and handling the window
         'Procreation threshold',
         'Food preference',
         'Generation number',
-        'Amount of bodies with this species',
+        'Amount of smileys with this species',
         'ID of the species'
     )
 
@@ -157,8 +160,8 @@ def window_handling(): # Creating and handling the window
     # Creating the help button
     Button(
         text='?',
-            width=2,
-            takefocus=False,
+        width=2,
+        takefocus=False, 
         command=show_help
     ).pack(side=RIGHT, pady=8, padx=2)
 
@@ -175,19 +178,22 @@ def window_handling(): # Creating and handling the window
     global_items.new_game_button.pack(side=RIGHT, pady=8, padx=2)
 
     # Creating the exit button
-    exit_button = Button(
+    Button(
         text='exit',
         width=5,
         takefocus=False,
-        command=lambda: [global_items.canvas.after_cancel(global_items.canvas_after_id), window.destroy()]
-    )
-    exit_button.pack(side=RIGHT, pady=8, padx=2)
+        command=lambda: [
+            global_items.canvas.after_cancel(global_items.canvas_after_id),
+            stop_tips_timer(),
+            cancel_blink(),
+            window.destroy()
+        ]).pack(side=RIGHT, pady=8, padx=2)
 
     # Creating the 'What a wonderful game!' button
     def wonderful_game_request():
-        create_new_boss()
+        recreating_zombie_boss()
         init_stimulus_time()
-        prepare_tips()
+        tips_for_evolution()
         global_items.wonderful_game_button.pack_forget()
 
     global_items.wonderful_game_button = Button(
@@ -201,4 +207,5 @@ def window_handling(): # Creating and handling the window
     window.after(0, evolution)
     window.mainloop()
 
-window_handling()
+if __name__ == '__main__':
+    window_handling()

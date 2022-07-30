@@ -2,105 +2,87 @@ from math import dist
 from tkinter import NORMAL, DISABLED
 
 from config import *
-from draw_erase import change_shape_to_circle, handle_properties, restore_user_selected_body_shape, restore_user_selected_body_speed, restore_user_selected_body_vision_distance
-from mask import create_mask
-from tips import info_handle, mouse_clicked_on_body, prepare_info_handle
-from global_items import set_scales_colors, handle, window_commands, bodies, evolution_status
+from draw_creatures import draw_smiley, draw_zombie_boss
+from draw_non_creatures import D_handle_properties
+from mask import D_create_mask
+from tips import stop_tips_timer, D_tips_handle, force_tip_for_creature, prepare_tips_handle
+from global_items import handle, window_commands, smilies, evolution_status
+from zombie_boss import D_create_new_boss
+from special_window_functions import D_change_user_control_widgets_state, set_scales_colours
 import global_items
 
 @handle
-def mutate_scales(showvalue: bool, sliderlength: int):
-    for widget in (global_items.user_selected_body_speed, global_items.user_selected_vision_distance):
-        widget.configure(
-            showvalue=showvalue,
-            sliderlength=sliderlength)
-
-def set_active_scale():
+def D_set_active_scale():
     global_items.active_scale = SPEED
-    set_scales_colors()
+    set_scales_colours()
 
 @handle
-def change_user_control_widgets_state(state: str):
-    '''Changing the states of all of the buttons of the user control frame to the state specified as the parameter.'''
-    for widget in global_items.user_control_frame.winfo_children():
-        widget.configure(state=state)
-    if state == NORMAL:
-        selected_body = evolution_status.zombie_boss
-        global_items.health_to_display.set(f'Health:\n{round(selected_body.health)}')
-        mutate_scales(showvalue=True, sliderlength=20)
-        global_items.user_selected_body_speed.set(round(selected_body.speed*RATIO))
-        global_items.user_selected_vision_distance.set(round(selected_body.vision_distance))
-    else:
-        global_items.health_to_display.set('Health:\n--')
-        mutate_scales(showvalue=False, sliderlength=0)
-
-@handle
-def pause_mode(enable: bool):
+def D_set_pause_mode(enable: bool):
     if enable:
         window_commands['run/pause'] = PAUSE
     else:
         window_commands['run/pause'] = RUN
 
-def restore_properties():
-    restore_user_selected_body_speed()
-    restore_user_selected_body_vision_distance()
-    restore_user_selected_body_shape()
+def prepare_selection(): # Preparation before the user can select the zombie boss
+    global last_clicked_smiley # The last smiley to be clicked
+    last_clicked_smiley = None
+    evolution_status.zombie_boss = None
 
-def selecting_body(event):
+def replace_boss_with_smiley(): # Changing the zombie boss back to a smiley which was on its spot before it was changed to a zombie boss
+    global last_clicked_smiley
+    # Deleting the boss
+    evolution_status.zombie_boss = None
+    global_items.canvas.delete('boss')
+
+    # Restoring a smiley on the zombie boss's spot
+    smilies.append(last_clicked_smiley)
+    draw_smiley(last_clicked_smiley)
+
+def selecting_creature(event):
     '''Maintaining the features that work with the mouse when it is inside the evolution field.'''
-    clicked_body = NOTHING_CLICKED
-    for body in bodies:
-        if dist((event.x, event.y),
-                (body.x, body.y)) <= HALF_BODY_SIZE*1.2:
-            clicked_body = body
-            break
-    if clicked_body == NOTHING_CLICKED:
-        if any(body.shape == CIRCLE for body in bodies):
-            evolution_status.zombie_boss = None
-            restore_properties()
-            change_user_control_widgets_state(DISABLED)
-        return
-    mouse_clicked_on_body(clicked_body)
-    if clicked_body.shape == CIRCLE:
-        evolution_status.zombie_boss = None
-        change_user_control_widgets_state(DISABLED)
-        restore_properties()
-    else:
-        restore_properties()
-        evolution_status.zombie_boss = clicked_body
-        evolution_status.zombie_boss.health = clicked_body.energy
-        change_shape_to_circle(clicked_body)
-        change_user_control_widgets_state(NORMAL)
-
-def user_select_body():
-    '''Maintaining the process of the user selecting the body.'''
-    @handle
-    def selected() -> bool:
-        '''A separate function which is required for the decorator to work along with it.'''
-        handle_properties()
-
-        info_handle()
-        return window_commands['run/pause'] == RUN
-    prepare_info_handle()
-    while not selected():
-        continue
+    global last_clicked_smiley
+    for smiley in smilies:
+        if dist((event.x, event.y), (smiley.x, smiley.y)) <= HALF_SMILEY_SIZE*EXTENSION:
+            # A smiley has been clicked
+            force_tip_for_creature(BOSS) # Displaying a tip forthwith
+            # If the zombie boss exits, then it is needed to replace the zombie boss with the smiley which was on its spot before it turned into a zombie boss
+            if evolution_status.zombie_boss is not None:
+                replace_boss_with_smiley()
+            # Handling the smiley which will subsequently be deleted
+            last_clicked_smiley = smiley
+            global_items.canvas.delete(smiley.image_reference)
+            smilies.remove(smiley)
+            # Placing a zombie boss instead of a smiley
+            D_create_new_boss(
+                speed=smiley.speed,
+                vision_distance=smiley.vision_distance,
+                health=smiley.energy,
+                x=smiley.x,
+                y=smiley.y)
+            draw_zombie_boss()
+            D_change_user_control_widgets_state(NORMAL)
+            return
+    # Click the zombie boss or a void area
     if evolution_status.zombie_boss is not None:
-        create_mask()
+        if dist((event.x, event.y), 
+            (evolution_status.zombie_boss.x, evolution_status.zombie_boss.y)) <=\
+                global_items.zombie_boss_half_height*EXTENSION: # Clicked the zombie boss; it is assumed that the height is greater than the width
+            force_tip_for_creature(SMILEY) # Displaying a tip forthwith
+        replace_boss_with_smiley()
+        D_change_user_control_widgets_state(DISABLED)
+        last_clicked_smiley = None
 
-# 'What a wonderful game' button blinking
-blink_text = {
-    WHAT_A_WONDERFUL_GAME: '',
-    '': WHAT_A_WONDERFUL_GAME
-}
-
-BLINK_TIMES = 9
-
-blink_times = 0
-
-def blink():
-    global blink_times
-    blink_times += 1
-    if blink_times % BLINK_TIMES == 0:
-        return
-    global_items.wonderful_game_button.configure(text=blink_text[global_items.wonderful_game_button['text']])
-    global_items.wonderful_game_button.after(500, blink)
+def user_select_zombie_boss():
+    '''Maintaining the process of the user selecting the zombie boss.'''
+    @handle
+    def D_selected() -> bool:
+        '''A separate function which is required for the decorator to work along with it.'''
+        D_handle_properties()
+        D_tips_handle()
+        return window_commands['run/pause'] == RUN
+    prepare_tips_handle()
+    while not D_selected():
+        continue
+    stop_tips_timer()
+    if evolution_status.zombie_boss is not None:
+        D_create_mask()

@@ -9,34 +9,7 @@ from config import *
 
 import global_items
 
-window_commands = {
-    'run/pause': PAUSE,
-    'to-show-selected-property': 'Nothing',
-    'display-properties': True,
-    'new-game': False
-}
-
-def delete_help(event=None):
-    try:
-        global_items.help_window.destroy()
-    except (NameError, AttributeError):
-        return
-
-    del global_items.help_window
-
-def center_window(window: object):
-    '''Centering a window on the screen.'''
-    window.update()
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-    window_width = window.winfo_width()
-    window_height = window.winfo_height()
-    x = round(screen_width/2 - window_width/2)
-    y = round(screen_height/2 - window_height/2)
-    window.geometry(f'+{x}+{y}')
-
-last_updating_time = time()
-
+# Classes
 class ExceptionToRestart(Exception):
     pass
 
@@ -45,6 +18,64 @@ class EvolutionStatus:
         self.description = None
         self.survivor = None
         self.zombie_boss = None
+        self.result = None
+
+class Creature: # For the smilies, normal zombies and the zombie boss
+     def __init__(
+        self,
+        vision_distance: float,
+        speed: float,
+        x: float,
+        y: float
+    ):
+        self.vision_distance = vision_distance
+        self.speed = speed
+        self.x, self.y = x, y
+
+class CreatureStatus:
+    def __init__(self):
+        self.description = None
+        self.parameter = None
+
+class Unalive(Creature): # For normal zombies and the zombie boss
+    def __init__(
+        self,
+        vision_distance: float,
+        speed: float,
+        health: float,
+        x: float,
+        y: float
+        ):
+        super().__init__(vision_distance=vision_distance, speed=speed, x=x, y=y)
+        self.health = health
+        self.species = (0, 0, 0) # Black colour
+
+# Variables
+window_commands = {
+    'run/pause': PAUSE,
+    'to-show-selected-property': 'Nothing',
+    'display-properties': True,
+    'new-game': False
+}
+window = Tk()
+evolution_status = EvolutionStatus()
+plants: set[object] = set()
+smilies: list[object] = []
+zombies: list[object] = []
+evolution_field = {}
+smilies_data ={}
+scales = {}
+
+# Functions
+def delete_help_window(event=None):
+    try:
+        global_items.help_window.destroy()
+    except (NameError, AttributeError): # The help window may not exist yet
+        return
+    del global_items.help_window
+
+DELTA = 0.1 # Window update every DELTA seconds
+last_updating_time = time()
 
 def time_to_update() -> bool:
     '''Checking if it is time to update the window where the evolution takes place.'''
@@ -56,37 +87,34 @@ def time_to_update() -> bool:
     return False
 
 def handle(func: Callable) -> Callable:
-    '''Maintaining calls of functions making sure it is not time to do anything except this function which can affect the program.'''
+    '''Maintaining calls of functions making sure it is not time to do anything except this function which can affect the program. All of the functions which are decorated with this function have their names starting with "D_"'''
     def wrapper(*arg, **kwargs):
         try:
-            window.winfo_exists()
-            # TclError is thrown if the window has been closed with the exit button
-        except TclError:
-            sys_exit()
+            window.winfo_exists() # Making sure the window hasn't been closed with the exit button
+            
+            if time_to_update():
+                window.update()
+                window_is_active_ = window_is_active(window)
+                if not window_is_active_: # Deleting the help window when an alt+tab is accomplished
+                    delete_help_window()
+                if global_items.mask_exists:
+                    # If the main window is active, whilst the mask window is not active, then the mask is shown
+                    if window_is_active_:
+                        if not window_is_active(global_items.mask):
+                            global_items.mask.deiconify()
+                            global_items.mask.attributes('-topmost', True)
+                    else:
+                        if global_items.mask.state() != 'withdrawn':
+                            global_items.mask.withdraw()
+                
+            if window_commands['new-game']: # Implementing the transition to the new game
+                window_commands['new-game'] = False
+                raise ExceptionToRestart
 
-        if time_to_update():
-            window.update()
-            window_is_active_ = window_is_active(window)
-            if not window_is_active_: # Deleting the help window when an alt+tab is accomplished
-                delete_help()
-
-            if global_items.mask_exists:
-                # If the main window is active, whilst the mask window is not active, then the mask is shown
-                if window_is_active_:
-                    if not window_is_active(global_items.mask):
-                        global_items.mask.deiconify()
-                        global_items.mask.attributes('-topmost', True)
-                else:
-                    if global_items.mask.state() != 'withdrawn':
-                        global_items.mask.withdraw()
-
-        if window_commands['new-game']:
-            window_commands['new-game'] = False
-            raise ExceptionToRestart     
-        try: # The window might be closed by these time this command is accomplished, so the actions with the window are impossible
             return func(*arg, **kwargs)
-        except TclError:
-            sys_exit()
+
+        except TclError: # TclError is thrown if the window has been closed with the exit button
+            sys_exit() # Finishing the current evolution thread
     return wrapper
 
 def window_is_active(window: object) -> bool:
@@ -106,58 +134,21 @@ def random_place(shape_size: int) -> tuple[int, int]:
     max_vertical = evolution_field['height'] - shape_size
     return randrange(shape_size, max_horizontal), randrange(shape_size, max_vertical)
 
-def new_pos(body: object) -> tuple[float]:
-    '''Checking if the body is on the edge of the evolution field and bearing it to the opposite edge if it is needed.'''
-    x_new = body.x
-    y_new = body.y
+def new_pos(creature: object) -> tuple[float]:
+    '''Checking if the creature is on the edge of the evolution field and bearing it to the opposite edge if it is needed.'''
+    x_new = creature.x
+    y_new = creature.y
 
     evolution_field_width, evolution_field_height = evolution_field['width'], evolution_field['height']
 
-    if body.x > evolution_field_width:
-        x_new = HALF_BODY_SIZE
-    elif body.x < 0:
-        x_new = evolution_field_width-HALF_BODY_SIZE
+    if creature.x > evolution_field_width:
+        x_new = HALF_SMILEY_SIZE
+    elif creature.x < 0:
+        x_new = evolution_field_width-HALF_SMILEY_SIZE
 
-    if body.y > evolution_field_height:
-        y_new = HALF_BODY_SIZE
-    elif body.y < 0:
-        y_new = evolution_field_height-HALF_BODY_SIZE
+    if creature.y > evolution_field_height:
+        y_new = HALF_SMILEY_SIZE
+    elif creature.y < 0:
+        y_new = evolution_field_height-HALF_SMILEY_SIZE
         
     return x_new, y_new
-
-def start_pause_request(event):
-    window_commands['run/pause'] = PAUSE if window_commands['run/pause'] == RUN else RUN
-
-def mouse_wheel(event):
-    scale = global_items.user_selected_body_speed if global_items.active_scale == SPEED else global_items.user_selected_vision_distance
-    current_value = scale.get()
-    if event.delta > 0:
-        scale.set(current_value+1)
-    else:
-        scale.set(current_value-1)
-
-def set_scales_colors():    
-    if global_items.active_scale == VISION_DISTANCE:
-        global_items.user_selected_vision_distance.configure(bg='light yellow')
-        global_items.user_selected_body_speed.configure(bg='SystemButtonFace')
-    else:
-        global_items.user_selected_vision_distance.configure(bg='SystemButtonFace')
-        global_items.user_selected_body_speed.configure(bg='light yellow')  
-    window.update()
-
-def switch_scales(event):
-    global_items.active_scale = VISION_DISTANCE if global_items.active_scale == SPEED else SPEED
-    set_scales_colors()
-
-window = Tk()
-evolution_status = EvolutionStatus()
-plants: set[object] = set()
-
-bodies: list[object] = []
-zombies: list[object] = []
-
-progenitor_properties: dict[str, dict] = {}
-evolution_field = {'width': 0, 'height': 0}
-
-average_body_speed = average_body_vision_distance = 0
-energy_for_vision = energy_for_moving = 0

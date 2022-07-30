@@ -40,7 +40,7 @@ Plants are merely stationary objects which can be eaten by smilies and trodden b
 — Controls
 
 – Mouse
-* The zombie boss follows your mouse pointer
+* The zombie boss follows your mouse cursor
 * Click your right mouse button to pause/resume the game
 * Click your left mouse button to put the zombie boss to sleep and see the entire evolution field. Click it again in order to waken it
 * Click your mouse wheel to switch between the scales on the right-hand panel

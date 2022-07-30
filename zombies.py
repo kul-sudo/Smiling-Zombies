@@ -1,106 +1,34 @@
-from math import dist
-from tkinter import DISABLED, RIGHT
-
 from config import *
 from crosses import add_cross
-from mask import create_hole, delete_mask
-from window_functions import blink, change_user_control_widgets_state
-from tips import show_tip
-from global_items import distance_between_objects, new_pos, handle, plants, bodies, zombies, evolution_field, evolution_status
+from global_items import CreatureStatus, Unalive, distance_between_objects, handle, plants, smilies, zombies
 
 import global_items
 
-def calculate_data_for_zombie_boss():
-    global energy_for_vision_zombie_boss, energy_for_moving_zombie_boss
+class Zombie(Unalive):
+    def __init__(
+        self,
+        vision_distance: float,
+        speed: float,
+        health: float,
+        x: float,
+        y: float
+        ):
+        super().__init__(vision_distance=vision_distance, speed=speed, health=health,
+                                 x=x, y=y)
+        self.status=CreatureStatus()
 
-    d_1680_1050 = sqrt(1680**2+1050**2) # Diagonal of the evolution field with the screen resolution being 1680x1050
-    d = sqrt(evolution_field['width']**2+evolution_field['height']**2)
-    ratio = d/d_1680_1050
-    energy_for_vision_zombie_boss = VISION_DISTANCE_LOSS_1680_1050/ratio
-    energy_for_moving_zombie_boss = SPEED_LOSS_1680_1050/ratio
+def create_zombie(speed, vision_distance, health, x, y):
+    new_zombie = Zombie(speed=speed, vision_distance=vision_distance, 
+                            health=health, x=x, y=y)
+    new_zombie.status.description = SLEEPING
+    return new_zombie
 
 @handle
-def delete_all_zombies():
+def D_delete_all_zombies():
     zombies.clear()
 
-def zombie_boss_off() -> bool:
-    zombie_boss = evolution_status.zombie_boss
-    if zombie_boss.health <= 0: # Checking if it is time to remove the zombie boss
-        # global_items.canvas.delete(zombie_boss.image_reference)
-        add_cross(zombie_boss.x, zombie_boss.y)
-        evolution_status.zombie_boss = None
-        change_user_control_widgets_state(DISABLED)
-        global_items.wonderful_game_button.pack(side=RIGHT, pady=8, padx=2)
-        blink()
-        show_tip(PAUSE_RESUME)
-        delete_mask()
-        return True
-    return False    
+ZOMBIE_PLANT_HEALTH_LOSS = 30
 
-@handle
-def zombie_boss_one_action():
-    global energy_for_vision_zombie_boss, energy_for_moving_zombie_boss
-
-    zombie_boss = evolution_status.zombie_boss
-    create_hole(zombie_boss)
-
-    # Calculating health
-    zombie_boss.health -= zombie_boss.vision_distance*energy_for_vision_zombie_boss
-    canvas_mouse_x = global_items.canvas.winfo_pointerx() - global_items.canvas.winfo_rootx()
-    canvas_mouse_y = global_items.canvas.winfo_pointery() - global_items.canvas.winfo_rooty()
-    standing_put = dist(
-        (canvas_mouse_x, canvas_mouse_y),
-        (zombie_boss.x, zombie_boss.y)) <= HALF_BODY_SIZE*1.2
-    if not standing_put:
-        zombie_boss.health -= zombie_boss.speed*energy_for_moving_zombie_boss
-
-    if zombie_boss_off():
-        return
-    
-    if standing_put: # Doing nothing if the zombie boss is standing put
-        return
-
-    # Checking if it is time to do a Wrap
-    new_x, new_y = new_pos(zombie_boss)
-    if (new_x, new_y) != (zombie_boss.x, zombie_boss.y):
-        zombie_boss.x, zombie_boss.y = new_x, new_y
-        return
-    
-    # Moving the zombie boss
-    dx, dy = canvas_mouse_x - zombie_boss.x, canvas_mouse_y - zombie_boss.y
-    distance = dist((zombie_boss.x, zombie_boss.y), (canvas_mouse_x, canvas_mouse_y))
-    coeff = zombie_boss.speed/distance
-    zombie_boss.x, zombie_boss.y = zombie_boss.x + coeff*dx, zombie_boss.y + coeff*dy
-
-    # Consuming plants
-    to_remove = None
-    for plant in plants:
-        if distance_between_objects(zombie_boss, plant) <= USER_BODY_PLANT_GAP:
-            zombie_boss.health -= BOSS_PLANT_HEALTH_LOSS
-            to_remove = plant # Evading 'RuntimeError: Set changed size during iteration'
-            break
-    if to_remove is not None:
-        plants.remove(to_remove)
-        zombie_boss_off()
-        return
-
-    # Consuming bodies
-    transfer_to_zombies = None
-    for body in bodies:
-        if distance_between_objects(zombie_boss, body) <= USER_BODY_BODY_GAP:
-            transfer_to_zombies = body
-            min_health = min(body.energy, NEW_ZOMBIE_HEALTH)
-            body.health = min_health
-            body.species = (0, 0, 0)
-
-            zombie_boss.health += body.energy - min_health
-            break
-    if transfer_to_zombies is not None:
-        bodies.remove(transfer_to_zombies)
-        zombies.append(transfer_to_zombies)
-        transfer_to_zombies.status.description = SLEEPING
-
-@handle
 def zombie_one_action(zombie: object):
     '''Maintaining the behaviour of the zombie.'''
     
@@ -114,39 +42,40 @@ def zombie_one_action(zombie: object):
     if to_remove is not None:
         plants.remove(to_remove)
 
-        # Checking whether it is time for body to die or not
+        # Checking whether it is time for zombie to die or not
         if zombie.health <= 0:
             add_cross(zombie.x, zombie.y)
             zombies.remove(zombie)
         return
     
-    # Find a satisfactory body to chase for the zombie
-    visible_bodies = tuple(filter(lambda body: zombie.vision_distance >= distance_between_objects(zombie, body), bodies))
-    closest_body = min(visible_bodies, key=lambda body: distance_between_objects(zombie, body), default=None)
+    # Find a satisfactory smiley to chase for the zombie
+    visible_smileys = tuple(filter(lambda smiley: zombie.vision_distance >= distance_between_objects(zombie, smiley), smilies))
+    closest_smiley = min(visible_smileys, key=lambda smiley: distance_between_objects(zombie, smiley), default=None)
     
-    if closest_body is None:
+    if closest_smiley is None:
         zombie.status.description = SLEEPING
         return
     else:
-        zombie.status.description = FOLLOWING_BODY
-        zombie.status.parameter = closest_body
+        zombie.status.description = FOLLOWING_SMILEY
+        zombie.status.parameter = closest_smiley
         
-    # If the zombie chased a body and caught it, then the prey also becomes a zombie
+    # If the zombie chased a smiley and caught it, then the prey also becomes a zombie
     prey = zombie.status.parameter
-    if prey not in bodies:
+    if prey not in smilies: # The smiley could have ceased living by this moment
         zombie.status.description = SLEEPING
         return
     dx, dy = prey.x - zombie.x, prey.y - zombie.y
     distance = distance_between_objects(zombie, prey)
     coeff = zombie.speed/distance
-    zombie.x, zombie.y = zombie.x + coeff*dx, zombie.y + coeff*dy
+    zombie.x, zombie.y = zombie.x + coeff*dx, zombie.y + coeff*dy # Moving the zombie toward the prey
     if distance_between_objects(zombie, prey) <= zombie.speed:
-        prey.species = (0, 0, 0)
         min_health = min(prey.energy, NEW_ZOMBIE_HEALTH)
-        prey.health = min_health
         zombie.health += prey.energy - min_health
-        bodies.remove(prey)
-        zombies.append(prey)
-        prey.status.description = SLEEPING
+        zombies.append(create_zombie(
+            speed=prey.speed,
+            vision_distance=prey.vision_distance, 
+            health=min_health, 
+            x=prey.x+PLACEMENT_GAP,
+            y=prey.y+PLACEMENT_GAP))
+        smilies.remove(prey)
         zombie.status.description = SLEEPING
-        prey.y += PLACEMENT_GAP
