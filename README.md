@@ -18,7 +18,7 @@ They incessantly consume plants, consume each other, procreate and evolve. Remem
 The smilies have the following properties:
 * Speed
 * Vision distance: how far the smiley can see
-* Energy: eating plants/smilies augments the energy;<br>higher vision distance/speed => higher energy consumption;<br>zero energy means the cessation of smiley's life
+* Energy:<br>eating plants/smilies augments the energy;<br>higher vision distance/speed => higher energy consumption;<br>zero energy means the cessation of smiley's life
 * Procreation threshold: how much energy is required for the smiley to procreate
 * Food preference: whether the smiley prefers to eat plants or other smilies
 
@@ -47,7 +47,7 @@ Plants are merely stationary objects which can be eaten by smilies and trodden b
 # Controls
 
 ## Mouse
-* The zombie boss follows your mouse pointer
+* The zombie boss follows your mouse cursor
 * Click your right mouse button to pause/resume the game
 * Click your left mouse button to put the zombie boss to sleep and see the entire evolution field. Click it again in order to waken it
 * Click your mouse wheel to switch between the scales on the right-hand panel
