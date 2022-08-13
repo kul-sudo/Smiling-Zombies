@@ -1,10 +1,11 @@
+from ast import Return
 from tkinter import ARC, PhotoImage
 from tkinter.font import nametofont
 from time import time
 
 from config import *
 from zombies_images import *
-from global_items import evolution_status, smilies, zombies
+from global_items import window_commands, evolution_status, smilies, zombies, boss_shape_size, zombie_shape_size 
 
 import global_items, config
 
@@ -12,21 +13,21 @@ import global_items, config
 def create_boss_image():
     ZOMBIE_BOSS_SIZE_RATIO = 27 # Higher => smaller
     # Equalizing the size of a smiley and the size of a zombie boss
-    global zombie_boss_shape, zombie_boss_width
+    global zombie_boss_shape
     zombie_boss_shape = PhotoImage(data=ZOMBIE_BOSS).subsample(ZOMBIE_BOSS_SIZE_RATIO, ZOMBIE_BOSS_SIZE_RATIO)
-    global_items.zombie_boss_half_height = zombie_boss_shape.height()/2
-    zombie_boss_width = zombie_boss_shape.width()
+    
+    boss_shape_size['half_width'] = zombie_boss_shape.width()/2
+    boss_shape_size['half_height'] = zombie_boss_shape.height()/2
 
 def draw_zombie_boss():
     global zombie_boss_shape
-    return global_items.canvas.create_image(
-        evolution_status.zombie_boss.x, evolution_status.zombie_boss.y, 
-        image=zombie_boss_shape, tags='boss')
+    global_items.canvas.create_image(
+    evolution_status.zombie_boss.x, evolution_status.zombie_boss.y, 
+    image=zombie_boss_shape, tags='boss')
 
 def update_zombie_boss_image():
-    zombie_boss = evolution_status.zombie_boss
     global_items.canvas.delete('boss')
-    zombie_boss.image_reference = draw_zombie_boss()
+    draw_zombie_boss()
 
 # Demonstrating the fact that the zombie boss is sleeping/has wakened
 def draw_z(x, y):
@@ -34,11 +35,10 @@ def draw_z(x, y):
 
 def draw_z_z_z():
     '''Demonstrating the fact that the zombie boss is currently sleeping'''
-    global zombie_boss_width
     zombie_boss = evolution_status.zombie_boss
     if zombie_boss is None:
         return
-    x_base = zombie_boss.x+zombie_boss_width/2    
+    x_base = zombie_boss.x+boss_shape_size['half_width']    
     draw_z(x_base+2, zombie_boss.y-7)
     draw_z(x_base+7, zombie_boss.y-13)
     draw_z(x_base+12, zombie_boss.y-21)
@@ -57,21 +57,23 @@ def create_zombies_image():
     # Equalizing the size of a smiley and the size of a zombie
     global zombie_shape
     zombie_shape = PhotoImage(data=ZOMBIE).subsample(ZOMBIE_SIZE_RATIO, ZOMBIE_SIZE_RATIO)
-    global_items.zombie_half_height = zombie_shape.height()/2
+    
+    zombie_shape_size['half_height'] = zombie_shape.height()/2
+    zombie_shape_size['half_width'] = zombie_shape.width()/2
 
 def draw_zombie(zombie):
     global zombie_shape
-    return global_items.canvas.create_image(zombie.x, zombie.y, image=zombie_shape, tags='zombie')
+    global_items.canvas.create_image(zombie.x, zombie.y, image=zombie_shape, tags='zombie')
 
 def update_zombie_images():
     '''Erasing all of the zombies that have already been drawn and drawing new ones.'''
     global_items.canvas.delete('zombie')
     for zombie in zombies:
-        zombie.image_reference = draw_zombie(zombie)
+        draw_zombie(zombie)
 
 # Drawing the smilies
 def update_smiley_images():
-    '''Erasing all of the smileys that have already been drawn and drawing new ones.'''
+    '''Erasing all of the smilies that have already been drawn and drawing new ones.'''
     global_items.canvas.delete('smiley')
     for smiley in smilies:
         smiley.image_reference = draw_smiley(smiley)
@@ -191,11 +193,16 @@ def draw_smiley(smiley):
                     smiley.stimulus_start = now
                     # Storing the time when the stimulus was resolved to be displayed
                     # The stimulus might be displayed in a succeeding tact
+
                 if time() > smiley.stimulus_start + DISPLAY_PERIOD\
+                    or window_commands['to-show-selected-property'] != 'Nothing'\
                     or smiley.stimulus_start == now: # The stimulus is not displayed if there was one-tact-long sleep between active states (not sleeping)
+                    
                     draw_sleeping_smiley(smiley_to_draw) 
                 else:
                     draw_aggressive_smiley(smiley_to_draw)
+
+                    # The stimulus by smilies
                     x0, y0 = smiley_to_draw.x+0.5*SMILEY_SIZE, smiley_to_draw.y-2.3*SMILEY_SIZE
                     x1, y1 = x0+46, y0+28, # 46 and 28 have been chosen manually
                     tags = ('stimulus', smiley_to_draw.smiley_tag, 'smiley')

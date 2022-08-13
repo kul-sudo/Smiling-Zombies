@@ -25,16 +25,16 @@ def one_evolution():
         D_one_evolution_step()
         fps_clock.tick(FPS)
 
-        smileys_empty, zombies_empty = smilies == [], zombies == []
-        if smileys_empty and not zombies_empty:
+        smilies_empty, zombies_empty = smilies == [], zombies == []
+        if smilies_empty and not zombies_empty:
             evolution_status.result = ALL_ZOMBIES
-        elif smileys_empty and zombies_empty:
+        elif smilies_empty and zombies_empty:
             if evolution_status.zombie_boss is None:
                 evolution_status.result = NO_CREATURES
             else:
                 evolution_status.result = ONLY_ZOMBIE_BOSS
         elif zombies_empty and evolution_status.zombie_boss is None and len(set(smiley.species for smiley in smilies)) == 1:
-            evolution_status.result = SQUARES_ONE_SPECIES_WON
+            evolution_status.result = ONE_SMILEY_SPECIES_WON
         
         if evolution_status.result is not None:
             return    
@@ -62,6 +62,7 @@ def D_one_evolution_step():
     delete_old_cross()
     update_cross_images()
     D_handle_properties()
+    global_items.canvas.tag_raise('frame', 'all')
     global_items.canvas.update()
     if window_commands['run/pause'] == PAUSE:
         evolution_status.description = PAUSED

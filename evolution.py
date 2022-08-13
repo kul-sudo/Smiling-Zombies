@@ -1,6 +1,6 @@
 from tkinter import DISABLED
 from config import *
-from smileys_functions import create_zero_generation, D_delete_all_smileys
+from smilies_functions import create_zero_generation, D_delete_all_smilies
 from mask import D_delete_mask, D_handle_mask
 from plants import create_initial_plants, create_plant_image, D_delete_all_plants
 from draw_non_creatures import update_plant_images
@@ -35,7 +35,7 @@ def evolution():
             evolution_status.description = DELETE_ERASE_EVERYTHING
             global_items.stimulus_on = False 
             D_delete_mask()
-            D_delete_all_smileys()
+            D_delete_all_smilies()
             D_delete_all_zombies()
             D_delete_all_plants()
             D_delete_all_crosses()
@@ -46,7 +46,7 @@ def evolution():
 
             # Evolution prep
             evolution_status.description = EVOLUTION_PREPARATION
-            global_items.canvas.create_rectangle(2, 2, evolution_field['width']+1, evolution_field['height']+1) # Evolution field frame
+            global_items.canvas.create_rectangle(2, 2, evolution_field['width']+1, evolution_field['height']+1, tags='frame') # Evolution field frame
             create_zero_generation()
             create_initial_plants()
             update_smiley_images()

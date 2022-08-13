@@ -1,5 +1,6 @@
 from math import dist, sqrt
 from tkinter import DISABLED, RIGHT, NORMAL
+from time import time
 
 from config import *
 from crosses import add_cross
@@ -36,11 +37,11 @@ class Boss(Unalive):
             health=health,
             x=x,
             y=y) 
-        self.sleeping = False                        
+        self.sleeping = False     
 
 @handle
 def D_create_new_boss(speed, vision_distance, health, x, y): 
-    evolution_status.zombie_boss = Boss(speed=speed, vision_distance=vision_distance, 
+    evolution_status.zombie_boss = Boss(vision_distance=vision_distance, speed=speed, 
                             health=health, x=x, y=y)
 
 def recreating_zombie_boss():
@@ -56,8 +57,9 @@ def recreating_zombie_boss():
 
 def is_zombie_boss_okay() -> bool: # If the health of the zombie boss is okay, then True is returned; whereas if it is not okay, then it ceases living
     zombie_boss = evolution_status.zombie_boss
-    if zombie_boss.health <= 0: # Checking if it is time to remove the zombie boss
-        global_items.canvas.delete(zombie_boss.image_reference)
+
+    if round(zombie_boss.health) <= 0: # Checking if it is time to remove the zombie boss        
+        global_items.canvas.delete('boss')
         add_cross(zombie_boss.x, zombie_boss.y)
         evolution_status.zombie_boss = None
         D_change_user_control_widgets_state(DISABLED)
@@ -111,6 +113,11 @@ def zombie_boss_one_action():
     for plant in plants:
         if distance_between_objects(zombie_boss, plant) <= ZOMBIE_BOSS_PLANT_GAP_TO_REACH:
             zombie_boss.health -= ZOMBIE_BOSS_PLANT_HEALTH_LOSS
+
+            # Storing the data about the collision with a plant
+            zombie_boss.collision.result = -ZOMBIE_BOSS_PLANT_HEALTH_LOSS
+            zombie_boss.collision.moment = time()
+            
             to_remove = plant # Evading 'RuntimeError: Set changed size during iteration'
             break
     if to_remove is not None:
@@ -118,18 +125,24 @@ def zombie_boss_one_action():
         is_zombie_boss_okay()
         return
 
-    # Consuming smileys
+    # Consuming smilies
     transfer_to_zombies = None
     for smiley in smilies:
         if distance_between_objects(zombie_boss, smiley) <= ZOMBIE_BOSS_SMILEY_GAP_TO_REACH:
             transfer_to_zombies = smiley
             min_health = min(smiley.energy, NEW_ZOMBIE_HEALTH)
-            zombie_boss.health += smiley.energy - min_health
+
+            # Storing the data about the collision with a smiley
+            extra_health = smiley.energy - min_health
+            zombie_boss.health += extra_health
+            zombie_boss.collision.result = extra_health
+            zombie_boss.collision.moment = time()
             break
     if transfer_to_zombies is not None:
-        zombies.append(create_zombie(speed=transfer_to_zombies.speed,
-                                 vision_distance=transfer_to_zombies.vision_distance, 
-                                 health=min_health, 
-                                 x=transfer_to_zombies.x,
-                                 y=transfer_to_zombies.y))
+        zombies.append(create_zombie(
+            speed=transfer_to_zombies.speed,
+            vision_distance=transfer_to_zombies.vision_distance,
+            health=min_health,
+            x=transfer_to_zombies.x,
+            y=transfer_to_zombies.y))
         smilies.remove(transfer_to_zombies)

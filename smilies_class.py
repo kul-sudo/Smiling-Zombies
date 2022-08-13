@@ -44,7 +44,7 @@ class Smiley(Creature): # The class of the smileys
         self.birth_time = time()
         self.energy = energy
         self.stimulus_start = float('-inf')
-        self.stimulus = choice(('💀!', '😑', '😐'))
+        self.stimulus = choice(('💀!', '😠', '😐', '👎'))
         self.previous_x, self.previous_y = x, y
 
     @handle
@@ -58,7 +58,7 @@ class Smiley(Creature): # The class of the smileys
             self.energy -= self.speed*smilies_data['energy_for_moving']
 
         # Checking whether it is time for the smiley to die or not
-        if self.energy <= 0:
+        if round(self.energy) <= 0:    
             add_cross(self.x, self.y)
             smilies.remove(self)
             return
@@ -84,8 +84,8 @@ class Smiley(Creature): # The class of the smileys
             dangerous_pursuers = [] # All of the objects of visible_pursuers that can get to the place where self current is not dying on the way towards this
             for pursuer in visible_pursuers:
                 distance = distance_between_objects(self, pursuer)
-                time = distance/pursuer.speed
-                final_energy = pursuer.energy - time*total_energy_loss(pursuer)
+                time_ = distance/pursuer.speed
+                final_energy = pursuer.energy - time_*total_energy_loss(pursuer)
                 if final_energy > 0: 
                     dangerous_pursuers.append(pursuer)
             if dangerous_pursuers != []: # Escaping the closest pursuers
@@ -158,6 +158,11 @@ class Smiley(Creature): # The class of the smileys
             if distance_between_objects(self, prey) <= self.speed:
                 if self.energy > prey.energy:
                     self.energy += prey.energy
+
+                    # Storing the data about the collision with a smiley
+                    self.collision.result = prey.energy
+                    self.collision.moment = time()
+
                     smilies.remove(prey)
                     self.procreate()
                 else:
@@ -169,6 +174,11 @@ class Smiley(Creature): # The class of the smileys
             self.one_step_to(plant_prey)
             if distance_between_objects(self, plant_prey) <= self.speed:
                 self.energy += PLANT_ENERGY
+
+                # Storing the data about the collision with a plant
+                self.collision.result = PLANT_ENERGY
+                self.collision.moment = time()
+                    
                 plants.remove(plant_prey)
                 self.procreate()
     
@@ -242,11 +252,11 @@ class Smiley(Creature): # The class of the smileys
         profitable_plants = [] # The plants that are worth being eaten because the energy which is received from them can make up the energy that was spent to catch them
         for plant in far_enough_from_zombie_boss:
             distance = distance_between_objects(self, plant)
-            time = distance/self.speed
-            self_final_energy = self.energy - time*total_energy_loss(self)
+            time_ = distance/self.speed
+            self_final_energy = self.energy - time_*total_energy_loss(self)
             if self_final_energy <= 0:
                 continue # Self will die before the plant is caught because of a low level of energy
-            if self_final_energy + PLANT_ENERGY <= self.energy - time*self.vision_distance*smilies_data['energy_for_vision']:
+            if self_final_energy + PLANT_ENERGY <= self.energy - time_*self.vision_distance*smilies_data['energy_for_vision']:
                 continue # It is not worth it to attempt to catch the plant in terms of the energy
             profitable_plants.append(plant)
         

@@ -1,10 +1,10 @@
 from time import time
-from tkinter import LAST, S, N
+from tkinter import LAST, S, N, E
 
 from config import *
 from zombies_images import *
 from crosses import crosses_list
-from global_items import zombies, distance_between_objects, handle, smilies, plants, window_commands, evolution_status
+from global_items import zombies, distance_between_objects, handle, smilies, plants, window_commands, evolution_status, boss_shape_size, zombie_shape_size
 import global_items
 
 # Plants
@@ -101,8 +101,22 @@ def display_property(creature: object, text: str, exceeding_y=0):
         anchor=S
     )
 
+def display_collision_result(creature: object, decrease_x: int | float):
+    '''Displaying stuff related to the collision.'''
+    number = round(creature.collision.result)
+    sign = '+' if number >= 0 else '–'
+    text = f'{sign}{abs(number)}'
+    global_items.canvas.create_text(
+        creature.x-decrease_x-2, creature.y,
+        text=text,
+        tags='property',
+        anchor=E,
+        fill='blue' if sign == '+' else 'red' 
+    )
+
 NONE = 'None'
 NEWLY_BORN_PERIOD = 4 # In seconds
+COLLISION_RESULTS_DISPLAY_PERIOD = 1 # How long the stuff related to the collision shall be displaed
 
 @handle
 def D_handle_properties():
@@ -110,14 +124,18 @@ def D_handle_properties():
     global_items.canvas.delete('property')
     global_items.canvas.delete('circle')
 
+    now = time()
+
     for smiley in smilies:
         match window_commands['to-show-selected-property']:  
             case 'Energy/health':
                 display_property(creature=smiley, text=round(smiley.energy), exceeding_y=HALF_SMILEY_SIZE)
+                if now < smiley.collision.moment + COLLISION_RESULTS_DISPLAY_PERIOD:
+                    display_collision_result(smiley, HALF_SMILEY_SIZE)
             case 'Speed':
                 display_property(creature=smiley, text=round(smiley.speed*SPEED_RATIO), exceeding_y=HALF_SMILEY_SIZE)
             case '"Newly born" if newly born':
-                display_property(creature=smiley, text='Newly born' if time() <= smiley.birth_time + NEWLY_BORN_PERIOD and smiley.generation_n != 0 else '', exceeding_y=HALF_SMILEY_SIZE)
+                display_property(creature=smiley, text='Newly born' if now <= smiley.birth_time + NEWLY_BORN_PERIOD and smiley.generation_n != 0 else '', exceeding_y=HALF_SMILEY_SIZE)
             case 'Procreation threshold':
                 display_property(creature=smiley, text=round(smiley.procreation_threshold), exceeding_y=HALF_SMILEY_SIZE)
             case 'Food preference':
@@ -142,11 +160,13 @@ def D_handle_properties():
                 if not global_items.mask_exists:
                     draw_one_vision_distance_circle(creature=zombie_boss)
             case 'Energy/health':
-                display_property(creature=zombie_boss, text=round(zombie_boss.health), exceeding_y=global_items.zombie_boss_half_height) 
+                display_property(creature=zombie_boss, text=round(zombie_boss.health), exceeding_y=boss_shape_size['half_height']) 
+                if now < zombie_boss.collision.moment + COLLISION_RESULTS_DISPLAY_PERIOD:
+                    display_collision_result(zombie_boss, boss_shape_size['half_width'])
             case 'Speed':
-                display_property(creature=zombie_boss, text=round(zombie_boss.speed*SPEED_RATIO), exceeding_y=global_items.zombie_boss_half_height)
+                display_property(creature=zombie_boss, text=round(zombie_boss.speed*SPEED_RATIO), exceeding_y=boss_shape_size['half_height'])
             case _:
-                display_property(creature=zombie_boss, text=NONE, exceeding_y=global_items.zombie_boss_half_height)
+                display_property(creature=zombie_boss, text=NONE, exceeding_y=boss_shape_size['half_height'])
     
     # Writing for zombies
     for zombie in zombies:
@@ -154,16 +174,18 @@ def D_handle_properties():
             case 'Nothing':
                 continue
             case 'Energy/health':
-                display_property(creature=zombie, text=round(zombie.health), exceeding_y=global_items.zombie_half_height)
+                display_property(creature=zombie, text=round(zombie.health), exceeding_y=zombie_shape_size['half_height'])
+                if now < zombie.collision.moment + COLLISION_RESULTS_DISPLAY_PERIOD:
+                    display_collision_result(zombie, zombie_shape_size['half_width'])
             case 'Speed':
-                display_property(creature=zombie, text=round(zombie.speed*SPEED_RATIO), exceeding_y=global_items.zombie_half_height)
+                display_property(creature=zombie, text=round(zombie.speed*SPEED_RATIO), exceeding_y=zombie_shape_size['half_height'])
             case 'Vision distance':
                 draw_one_vision_distance_circle(creature=zombie)
             case _:
-                display_property(creature=zombie, text=NONE, exceeding_y=global_items.zombie_half_height)
+                display_property(creature=zombie, text=NONE, exceeding_y=zombie_shape_size['half_height'])
 
 # Stimulus
-STIMULUS_DELAY: int = 25 # Displaying the stimulus toward the zombie boss in STIMULUS_DELAY seconds of inaction
+STIMULUS_DELAY: int = 15 # Displaying the stimulus toward the zombie boss in STIMULUS_DELAY seconds of inaction
 
 def set_stimulus_start_time():
     # The stimulus is only displayed above the smilies which recently started sleeping
@@ -179,7 +201,7 @@ def display_stimulus(): # This function is called every second
             zombie_boss = evolution_status.zombie_boss
             if zombie_boss is not None:
                 global_items.canvas.create_text(
-                    zombie_boss.x, zombie_boss.y+global_items.zombie_boss_half_height,
+                    zombie_boss.x, zombie_boss.y+boss_shape_size['half_height'],
                     text='Lazy lounger!',
                     tags='stimulus',
                     anchor=N)

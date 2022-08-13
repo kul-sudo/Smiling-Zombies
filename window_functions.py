@@ -6,7 +6,7 @@ from draw_creatures import draw_smiley, draw_zombie_boss
 from draw_non_creatures import D_handle_properties
 from mask import D_create_mask
 from tips import stop_tips_timer, D_tips_handle, force_tip_for_creature, prepare_tips_handle
-from global_items import handle, window_commands, smilies, evolution_status
+from global_items import handle, window_commands, smilies, evolution_status, boss_shape_size
 from zombie_boss import D_create_new_boss
 from special_window_functions import D_change_user_control_widgets_state, set_scales_colours
 import global_items
@@ -66,7 +66,7 @@ def selecting_creature(event):
     if evolution_status.zombie_boss is not None:
         if dist((event.x, event.y), 
             (evolution_status.zombie_boss.x, evolution_status.zombie_boss.y)) <=\
-                global_items.zombie_boss_half_height*EXTENSION: # Clicked the zombie boss; it is assumed that the height is greater than the width
+                boss_shape_size['half_height']*EXTENSION: # Clicked the zombie boss; it is assumed that the height is greater than the width
             force_tip_for_creature(SMILEY) # Displaying a tip forthwith
         replace_boss_with_smiley()
         D_change_user_control_widgets_state(DISABLED)

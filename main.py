@@ -6,7 +6,7 @@ from config import *
 from images import LOGO
 from help_maintenance import show_help
 from evolution import evolution
-from smileys_functions import calculate_data_for_smilies
+from smilies_functions import calculate_data_for_smilies
 from zombie_boss import recreating_zombie_boss, calculate_data_for_zombie_boss
 from tips import tips_for_evolution, stop_tips_timer
 from global_items import smilies_data, scales, delete_help_window, window_commands, window, evolution_field, evolution_status
@@ -15,7 +15,6 @@ from special_window_functions import cancel_blink, mouse_wheel, switch_scales, s
 import global_items
 
 def window_handling(): # Creating and handling the window
-
     '''Creating the window'''
     window.title(TITLE)
     window.iconphoto(True, PhotoImage(data=LOGO))
@@ -129,7 +128,7 @@ def window_handling(): # Creating and handling the window
         labelanchor='n'
     )).pack(side=RIGHT, padx=5)
 
-    # Creating an OptionMenu for selecting which properties have to be shown over the smileys
+    # Creating an OptionMenu for selecting which properties have to be shown over the smilies
     def handle_selection(choice: str):
         window_commands['to-show-selected-property'] = choice
 
@@ -142,7 +141,7 @@ def window_handling(): # Creating and handling the window
         'Procreation threshold',
         'Food preference',
         'Generation number',
-        'Amount of smileys with this species',
+        'Amount of smilies with this species',
         'ID of the species'
     )
 

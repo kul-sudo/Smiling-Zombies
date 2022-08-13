@@ -2,7 +2,7 @@ from math import dist, sqrt
 from random import randrange, random
 
 from config import *
-from smileys_class import Smiley
+from smilies_class import Smiley
 from global_items import smilies_data, distance_between_objects, handle, random_attribute, random_place, handle, smilies, evolution_field
 
 OLD_VISION_DISTANCE = 75 # A satisfying value for the size of the evolution field being {'width': 950, 'height': 500}
@@ -70,5 +70,5 @@ def D_create_one_smiley(id_: int):
     smilies.append(smiley)
     
 @handle
-def D_delete_all_smileys():
+def D_delete_all_smilies():
     smilies.clear()

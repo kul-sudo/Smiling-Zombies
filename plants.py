@@ -22,7 +22,7 @@ def create_plant_image():
 
 TIMES_ATTEMPTED = 200 # Limit of times for trying to place a plant on the window    
 
-class Plant: # Food for the smileys which is not able to move
+class Plant: # Food for the smilies which is not able to move
     def __init__(self):
         self.image_reference = None
         # Situating plant_pattern to a random place so that it does not overlap other plants or other boies. If the spot is not found in TIMES_ATTEMPTED times, then stop placing the plants

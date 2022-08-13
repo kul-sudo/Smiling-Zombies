@@ -7,14 +7,14 @@ from global_items import handle, smilies, smilies_data, evolution_status
 import config
 
 @handle
-def D_find_average_from_smileys():
+def D_find_average_from_smilies():
     smilies_amount = len(smilies)
 
     write_text_eventual = ''
 
     averaged = {
         'generation_n': round(fmean(smiley.generation_n for smiley in smilies)),
-        'plant_preference': round(fmean(1 if smiley.food_preference == PLANTS else 0 for smiley in smilies)), # Percent of smileys preferring plants
+        'plant_preference': round(fmean(1 if smiley.food_preference == PLANTS else 0 for smiley in smilies)), # Percent of smilies preferring plants
         'vision_distance': round(fmean(smiley.vision_distance for smiley in smilies)),
         'average_smiley_speed': round(fmean(smiley.speed for smiley in smilies)*SPEED_RATIO),
         'procreation_threshold': round(fmean(smiley.procreation_threshold for smiley in smilies)),
@@ -25,7 +25,7 @@ def D_find_average_from_smileys():
     averaged_analysis = {}
 
     one_species_survived_line = 'One of the species has survived'
-    average_generation_number = f'The average generation number of the smileys of the survived species: {averaged["generation_n"]}'
+    average_generation_number = f'The average generation number of the smilies of the survived species: {averaged["generation_n"]}'
     
     def ending() -> str: # Handling the 's' at the end of the word 'descendant'
         return f"{smilies_amount} descendant{'s' if smilies_amount > 1 else ''} left"
@@ -39,7 +39,7 @@ def D_find_average_from_smileys():
         'energy': INITIAL_ENERGY
     }
 
-    plant_preference_chance_text_turtle = round(sum(1 if smiley.food_preference == PLANTS else 0 for smiley in smilies)/smilies_amount*100) # Percent of smileys preferring plants
+    plant_preference_chance_text_turtle = round(sum(1 if smiley.food_preference == PLANTS else 0 for smiley in smilies)/smilies_amount*100) # Percent of smilies preferring plants
     for property in averaged:
         if property not in ('generation_n', 'descendants left', 'average_smiley_speed'):
             if property == 'plant_preference':
@@ -66,9 +66,9 @@ def D_find_average_from_smileys():
 def D_display_results():
     match evolution_status.result:
         case config.NO_CREATURES:
-            write_text_eventual = 'Neither smileys nor zombies have survived'
-        case config.SQUARES_ONE_SPECIES_WON:
-            write_text_eventual = D_find_average_from_smileys()
+            write_text_eventual = 'Neither smilies nor zombies have survived'
+        case config.ONE_SMILEY_SPECIES_WON:
+            write_text_eventual = D_find_average_from_smilies()
         case config.ONLY_ZOMBIE_BOSS:
             write_text_eventual = 'Only the zombie boss has survived. This happens tremendously infrequently :)'
         case _:

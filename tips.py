@@ -1,4 +1,4 @@
-from global_items import smilies, evolution_status, handle
+from global_items import smilies, evolution_status, handle, boss_shape_size
 from math import dist
 from config import *
 
@@ -22,7 +22,7 @@ def prepare_tips_handle(): # Preparing for the future calls of D_tips_handle()
     after_id = None
 
 DELAY = 300 # This amount of time has to pass (in ms) for the program to consider the user implies to see the tip for the smiley/zombie boss
-BASE_TIP_TEXT = 'If you place your mouse cursor on a smiley, then you will see the further tips.\nClick the right mouse button to commence the evolution.'
+BASE_TIP_TEXT = 'If you place your mouse cursor on a smiley, then you will see the further tips.\nClick the right mouse button to commence the evolution '
 
 @handle
 def D_tips_handle(): # This function restlessly works while the zombie boss selecting stage is active
@@ -45,7 +45,7 @@ def D_tips_handle(): # This function restlessly works while the zombie boss sele
     if hovered_over is None:         
         if evolution_status.zombie_boss is not None:
                 if dist((canvas_mouse_x, canvas_mouse_y), 
-                    (evolution_status.zombie_boss.x, evolution_status.zombie_boss.y)) <= global_items.zombie_boss_half_height*EXTENSION:
+                    (evolution_status.zombie_boss.x, evolution_status.zombie_boss.y)) <= boss_shape_size['half_height']*EXTENSION:
                     hovered_over = evolution_status.zombie_boss
 
     # Displaying the tip or starting the timer

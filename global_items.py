@@ -20,6 +20,12 @@ class EvolutionStatus:
         self.zombie_boss = None
         self.result = None
 
+class Collision:
+    '''Data about a collision with a smiley or a plant'''
+    def __init__(self):
+        self.result = None # The amount of received/spent energy/health
+        self.moment = float('-inf') # The time when the collision took place
+
 class Creature: # For the smilies, normal zombies and the zombie boss
      def __init__(
         self,
@@ -31,6 +37,7 @@ class Creature: # For the smilies, normal zombies and the zombie boss
         self.vision_distance = vision_distance
         self.speed = speed
         self.x, self.y = x, y
+        self.collision = Collision()
 
 class CreatureStatus:
     def __init__(self):
@@ -65,6 +72,8 @@ zombies: list[object] = []
 evolution_field = {}
 smilies_data ={}
 scales = {}
+boss_shape_size = {}
+zombie_shape_size = {}
 
 # Functions
 def delete_help_window(event=None):
