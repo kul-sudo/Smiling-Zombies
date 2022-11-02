@@ -1,4 +1,4 @@
-![https://github.com/kul-sudo/Smiling-Zombies](https://user-images.githubusercontent.com/95244851/180793301-3b538d18-a809-4e13-8cda-04b523096eec.png)
+[![](https://user-images.githubusercontent.com/95244851/180793301-3b538d18-a809-4e13-8cda-04b523096eec.png)](https://smiling-zombies.vercel.app/)
 
 # What is Smiling Zombies?
 Smiling Zombies is a vigorous clash of zombies and smilies.
