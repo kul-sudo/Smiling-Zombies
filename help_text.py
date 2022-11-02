@@ -1,7 +1,7 @@
 HELP_TEXT = \
 '''
-— What is Region of Zombies?
-Region of Zombies is a vigorous clash of zombies and smilies.
+— What is Smiling Zombies?
+Smiling Zombies is a vigorous clash of zombies and smilies.
 
 Zombify every single smiley and form your own tribe of zombies. The smilies look like innocent harmless cuties, but they might turn out to be beastly. Don't let them endear your with their cuteness.
 
